@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard NYC Taxi - Kathy</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -130,6 +131,7 @@
             margin-top: 30px;
             color: #6b7280;
         }
+
     </style>
 </head>
 
@@ -150,6 +152,9 @@
         <div class="header-text">
             <h1>Dashboard NYC Taxi — Kathy</h1>
             <p class="subtitle">Análisis Exploratorio de Datos (EDA)</p>
+            <p class="subtitle">Este proyecto es un dashboard interactivo en Flask para realizar un Análisis Exploratorio de Datos (EDA) sobre un dataset de viajes de taxis de Nueva York con más de 1.3 millones de registros.
+
+Incluye estadísticas clave, gráficos dinámicos con Chart.js, y visualizaciones interactivas con filtros para extraer conclusiones relevantes sobre los patrones de uso del taxi.</p>
         </div>
     </header>
 
@@ -213,6 +218,18 @@
             <h3 class="chart-title">Pasajeros por viaje</h3>
             <canvas id="pasajerosChart"></canvas>
         </div>
+        <div class="chart-card">
+    <h3 class="chart-title">Viajes para un nº de pasajeros</h3>
+
+    <label for="paxNumberFilter" style="font-size:13px; color:#6b7280;">
+        Número de pasajeros seleccionado:
+        <span id="paxNumberLabel">1</span>
+    </label>
+    <input id="paxNumberFilter" type="range" min="1" max="6" step="1" style="width:100%; margin:8px 0;">
+
+    <canvas id="paxNumberChart"></canvas>
+</div>
+
 
     </div>
 
@@ -246,6 +263,59 @@
             </table>
         </details>
     </div>
+<div>
+    <h2>🔵 Distancia del viaje vs propina</h2>
+    <canvas id="scatterChart" width="400" height="200"></canvas>
+</div>
+<!-- CONCLUSIONES DEL EDA -->
+<div class="data-table" style="margin-top: 40px;">
+    <h3 class="chart-title">📌 Conclusiones del Análisis Exploratorio (EDA)</h3>
+
+    <p>
+        A partir del análisis de <b>1.369.765 viajes de taxi en Nueva York</b>, se pueden extraer las siguientes conclusiones:
+    </p>
+
+    <ul style="line-height: 1.7; font-size: 15px; color: #374151;">
+
+        <li>
+            <b>🚕 Predominio de viajes cortos:</b><br>
+            La distancia media de los viajes es de <b>4.63 millas</b>, mientras que la mediana es de solo <b>1.70 millas</b>.
+            Esto indica que la mayoría de desplazamientos son trayectos urbanos cortos dentro de la ciudad.
+        </li>
+
+        <li>
+            <b>💵 Tarifas concentradas en importes bajos:</b><br>
+            La tarifa media se sitúa en torno a <b>12.10 $</b>, lo que confirma que la mayor parte de los viajes tienen un coste moderado.
+            Las tarifas elevadas existen, pero representan una minoría del total.
+        </li>
+
+        <li>
+            <b>👥 Uso mayoritariamente individual:</b><br>
+            El número de pasajeros más frecuente es <b>1 pasajero</b>, con <b>966.233 viajes</b>.
+            Esto demuestra que el taxi se utiliza principalmente de forma individual en Nueva York.
+        </li>
+
+        <li>
+            <b>📈 Relación entre distancia y propina:</b><br>
+            El gráfico de dispersión muestra una <b>tendencia positiva</b> entre la distancia del viaje y la propina.
+            A mayor distancia, suele aumentar la propina, aunque existe una alta variabilidad, lo que indica que también influyen otros factores.
+        </li>
+
+        <li>
+            <b>📊 Distribución desigual de los datos:</b><br>
+            Las distribuciones de distancia, tarifa y número de pasajeros son <b>claramente asimétricas</b>, con muchos valores bajos
+            y pocos valores extremos que elevan la media.
+        </li>
+
+    </ul>
+
+    <p style="margin-top: 15px;">
+        ✅ <b>Conclusión general:</b> El uso del taxi en NYC responde a un patrón de viajes
+        <b>cortos, económicos y mayoritariamente individuales</b>, con propinas moderadas y un comportamiento muy concentrado
+        en trayectos urbanos.
+    </p>
+</div>
+
 
     <footer>
         Proyecto Big Data — Dashboard creado por Kathy 🚕✨
@@ -286,19 +356,124 @@ fetch("/api/graficos")
             });
         }
 
-        if (data.pasajeros) {
-            new Chart(document.getElementById("pasajerosChart"), {
-                type: "doughnut",
-                data: {
-                    labels: data.pasajeros.labels.map(x => x + " pasajeros"),
-                    datasets: [{
-                        data: data.pasajeros.values,
-                        backgroundColor: ["#2563eb","#4ade80","#fbbf24","#f87171","#a78bfa"]
-                    }]
-                }
-            });
+                if (data.pasajeros) {
+    // ----- gráfico DONUT existente -----
+    new Chart(document.getElementById("pasajerosChart"), {
+        type: "doughnut",
+        data: {
+            labels: data.pasajeros.labels.map(x => x + " pasajeros"),
+            datasets: [{
+                data: data.pasajeros.values,
+                backgroundColor: ["#2563eb","#4ade80","#fbbf24","#f87171","#f97316","#a78bfa"]
+            }]
         }
     });
+
+    // ----- NUEVO: gráfico por nº de pasajeros seleccionado -----
+    const paxNumbers = data.pasajeros.labels;   // [0,1,2,3,...]
+    const paxCounts  = data.pasajeros.values;   // [cuántos viajes]
+
+    const slider = document.getElementById("paxNumberFilter");
+    const sliderLabel = document.getElementById("paxNumberLabel");
+    const ctxPaxNumber = document.getElementById("paxNumberChart");
+
+    // Ajustamos rango del slider según los datos reales
+    const minPax = Math.min(...paxNumbers);
+    const maxPax = Math.max(...paxNumbers);
+    slider.min = minPax;
+    slider.max = maxPax;
+    slider.step = 1;
+    slider.value = minPax;
+    sliderLabel.textContent = minPax;
+
+    // Función para obtener viajes para un nº de pasajeros concreto
+    function getCountForPassengers(n) {
+        const idx = paxNumbers.indexOf(n);
+        if (idx === -1) return 0;
+        return paxCounts[idx];
+    }
+
+    // Creamos el gráfico inicial (para el valor mínimo)
+    const initialPax = minPax;
+    const initialCount = getCountForPassengers(initialPax);
+
+    const paxNumberChart = new Chart(ctxPaxNumber, {
+        type: "bar",
+        data: {
+            labels: [initialPax + " pasajeros"],
+            datasets: [{
+                data: [initialCount],
+                label: "Número de viajes",
+                backgroundColor: "#0ea5e9"
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Cuando se mueve el slider, actualizamos el gráfico
+    slider.addEventListener("input", () => {
+        const pax = Number(slider.value);
+        sliderLabel.textContent = pax;
+
+        const count = getCountForPassengers(pax);
+
+        paxNumberChart.data.labels = [pax + " pasajeros"];
+        paxNumberChart.data.datasets[0].data = [count];
+        paxNumberChart.update();
+    });
+}
+
+    });
+// ===============================
+// SCATTER CON PLOTLY (DISTANCIA vs PROPINA)
+// ===============================
+ // Scatter ligero con Chart.js: distancia vs propina
+    fetch("/api/scatter_distancia_propina")
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                console.error(data.error);
+                return;
+            }
+
+            new Chart(document.getElementById("scatterChart"), {
+                type: "scatter",
+                data: {
+                    // Chart.js espera los puntos en data: [{x:..., y:...}]
+                    datasets: [{
+                        label: "Viajes (muestra)",
+                        data: data.points,
+                        backgroundColor: "rgba(37, 99, 235, 0.5)"
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: "linear",
+                            title: {
+                                display: true,
+                                text: data.x_label
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: data.y_label
+                            }
+                        }
+                    }
+                }
+            });
+        });
 </script>
 
 </body>

@@ -5,6 +5,7 @@ Dashboard Flask - EDA NYC Taxi (versión alumno)
 from flask import Flask, render_template, jsonify
 import pandas as pd
 import os
+import numpy as np
 
 app = Flask(__name__)
 
@@ -109,6 +110,7 @@ def preparar_datos_graficos(df):
     return graficos
 
 
+
 # ===================== RUTAS FLASK =====================
 
 @app.route("/")
@@ -134,6 +136,44 @@ def api_graficos():
 
     graficos = preparar_datos_graficos(df)
     return jsonify(graficos)
+#Gráfico de dispersión
+@app.route("/api/scatter_distancia_propina")
+def api_scatter_distancia_propina():
+    df = cargar_datos()
+    if df is None:
+        return jsonify({"error": "No se pudo cargar el dataset"}), 500
+
+    # Comprobamos que existan las columnas
+    if not {"trip_distance", "tip_amount"}.issubset(df.columns):
+        return jsonify({"error": "Faltan columnas 'trip_distance' o 'tip_amount'"}), 400
+
+    # Nos quedamos solo con las columnas relevantes y limpiamos
+    datos = df[["trip_distance", "tip_amount"]].replace([np.inf, -np.inf], np.nan).dropna()
+
+    # Filtros para evitar valores locos
+    datos = datos[
+        (datos["trip_distance"] > 0) &
+        (datos["trip_distance"] < 50) &    # no viajes absurdamente largos
+        (datos["tip_amount"] >= 0) &
+        (datos["tip_amount"] < 100)        # no propinas absurdas
+    ]
+
+    # MUESTREO: máximo 10000 puntos para que no sea pesado
+    if len(datos) > 10000:
+        datos = datos.sample(10000, random_state=42)
+
+    # Formato que Chart.js entiende para scatter: [{x:..., y:...}, ...]
+    puntos = [
+        {"x": float(row["trip_distance"]), "y": float(row["tip_amount"])}
+        for _, row in datos.iterrows()
+    ]
+
+    return jsonify({
+        "title": "Relación entre distancia del viaje y propina",
+        "x_label": "Distancia del viaje",
+        "y_label": "Propina ($)",
+        "points": puntos
+    })
 
 #ejecuta servidor Flask
 if __name__ == "__main__":
