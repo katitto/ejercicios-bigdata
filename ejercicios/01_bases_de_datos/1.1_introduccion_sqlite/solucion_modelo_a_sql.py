@@ -46,11 +46,40 @@ def obtener_tablas(motor_db):
     df = pd.read_sql(sql, motor_db)
     return df["name"].tolist()
 
+#columnas de cada tabla:
+def obtener_columnas(tabla, motor_db):
+    sql = f"PRAGMA table_info({tabla});"
+    df = pd.read_sql(sql, motor_db)
+    return df[["name", "type", "notnull", "pk"]]
+
+
 
 def columnas_tabla(motor_db, tabla: str):
     # PRAGMA table_info("tabla")
     df = pd.read_sql(f"PRAGMA table_info({qident(tabla)});", motor_db)
     return df["name"].tolist()
+
+def imprimir_columnas_por_tabla(motor_db):
+    tablas = obtener_tablas(motor_db)
+
+    print("\n📋 ESQUEMA DE LA BASE DE DATOS")
+    print("=" * 70)
+
+    for tabla in tablas:
+        try:
+            cols = columnas_tabla(motor_db, tabla)
+
+            print(f"\n🗂️  Tabla: {tabla}")
+            print("-" * (12 + len(tabla)))
+
+            if cols:
+                for col in cols:
+                    print(f"  - {col}")
+            else:
+                print("  (sin columnas)")
+
+        except Exception as e:
+            print(f"❌ Error leyendo columnas de '{tabla}': {e}")
 
 
 def ejecutar_y_mostrar(motor_db, titulo: str, sql: str, head: int = 10):
@@ -341,3 +370,4 @@ if __name__ == "__main__":
     else:
         motor_db = create_engine(f"sqlite:///{RUTA_DB}")
         ejecutar_consultas_tienda(motor_db)
+        imprimir_columnas_por_tabla(motor_db)

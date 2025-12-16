@@ -25,8 +25,13 @@ import re
 # CONFIGURACIÓN DE RUTAS
 # ═══════════════════════════════════════════════════════════════════
 
-BASE_DIR = Path(__file__).parent.parent.parent.parent
-RUTA_CSVs = BASE_DIR / ".profesor" / ".datos" / "csv_tienda_informatica"
+#BASE_DIR = Path(__file__).parent.parent.parent.parent
+#RUTA_CSVs = BASE_DIR / ".profesor" / ".datos" / "csv_tienda_informatica"
+#RUTA_DB = Path(__file__).parent / "tienda_modelo_b.db"
+
+BASE_DIR = Path(__file__).resolve().parents[3]  # → ejercicios-bigdata
+
+RUTA_CSVs = BASE_DIR / "datos" / "csv_tienda_informatica" / "csv_tienda_informatica"
 RUTA_DB = Path(__file__).parent / "tienda_modelo_b.db"
 
 print(f"📂 Buscando CSVs en: {RUTA_CSVs}")
