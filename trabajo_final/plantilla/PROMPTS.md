@@ -180,7 +180,7 @@ INFRAESTRUCTURA:
   * Apache Spark Master 3.5.4 (puerto 8080)
   * Apache Spark Worker (2 GB RAM, 1 core)
 - Red interna Docker para comunicación entre servicios
-- Volúmenes montados para datos y resultados
+- Volúmenes montados para datos y resultados 
 
 DATOS:
 - Dataset: Quality of Government (QoG) Standard Dataset – Time Series
