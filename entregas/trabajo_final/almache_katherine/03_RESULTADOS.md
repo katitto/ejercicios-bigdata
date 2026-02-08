@@ -1,6 +1,6 @@
 # Paso 4: Resultados y Analisis
 
-**Alumno:** Katherine Almache
+**Alumno:** Katherine Almache 
 **Pregunta de investigacion:** 
  - Contexto: Desarrollo político–económico en el Magreb: autoritarismo vs democracia
  - ¿Cómo ha evolucionado el nivel de democracia y desarrollo económico en los países del Magreb entre 1990 y 2022?

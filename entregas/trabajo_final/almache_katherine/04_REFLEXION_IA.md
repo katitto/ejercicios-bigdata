@@ -1,6 +1,6 @@
 # Paso 5: Reflexion IA - Proceso de Aprendizaje
 
-**Alumno:** Katherine Almache
+**Alumno:** Katherine Almache 
 
 > **Instrucciones:** Para cada bloque (A, B, C), responde 3 preguntas y pega
 > el prompt MAS IMPORTANTE que usaste en ese bloque.

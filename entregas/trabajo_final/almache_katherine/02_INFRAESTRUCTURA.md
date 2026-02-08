@@ -1,6 +1,6 @@
 # Paso 2: Infraestructura Docker
 
-**Alumno:** Katherine Almache Riofrio
+**Alumno:** Katherine Almache Riofrio 
 
 ---
 
