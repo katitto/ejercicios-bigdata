@@ -1,7 +1,7 @@
 # Trabajo Final: [Tu Pregunta de Investigacion]
 
 **Alumno:** Katherine Almache
-**Fecha:** 08/02/2026 
+**Fecha:** 08/02/2026  
 
 ---
 

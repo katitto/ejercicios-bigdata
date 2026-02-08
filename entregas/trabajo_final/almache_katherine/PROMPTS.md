@@ -8,7 +8,7 @@
 
 ## COMO USAR ESTE ARCHIVO
 
-Este archivo tiene **DOS PARTES** muy diferentes:
+Este archivo tiene **DOS PARTES** muy diferentes: 
 
 | Parte | Que es | Como debe verse |
 |-------|--------|-----------------|

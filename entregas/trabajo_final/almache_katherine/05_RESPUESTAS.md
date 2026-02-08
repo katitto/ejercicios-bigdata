@@ -1,6 +1,6 @@
 # Paso 6: Preguntas de Comprension
 
-**Alumno:** Katherine Almache 
+**Alumno:** Katherine Almache  
 
 > **Instrucciones:** Responde cada pregunta con tus propias palabras.
 > Las respuestas deben ser especificas y demostrar que entiendes los conceptos.
