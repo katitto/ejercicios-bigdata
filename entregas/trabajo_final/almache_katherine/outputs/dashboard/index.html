@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Dashboard — Magreb: Democracia y Desarrollo (1990–2022)</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+  <!-- DATOS (JS embebido, sin fetch) -->
+  <script src="assets/cities_2022.js"></script>
+
+  <style>
+    :root{
+      --border:#ddd;
+      --text:#111;
+      --muted:#555;
+      --bg:#f6f6f6;
+      --card:#fff;
+    }
+
+    body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color:var(--text); }
+    header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: white;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+    header h1 { margin: 0; font-size: 18px; }
+    header p { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+
+    .toolbar{
+      margin-top:10px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .btn{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:8px 10px;
+      font-size:12px;
+      cursor:pointer;
+    }
+    .btn:hover{ border-color:#aaa; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      height: calc(100vh - 96px);
+    }
+
+    #map { width: 100%; height: 100%; }
+
+    aside {
+      padding: 14px;
+      overflow-y: auto;
+      border-left: 1px solid var(--border);
+      background: #fafafa;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    ul.clean{
+      margin:8px 0 0;
+      padding-left:18px;
+    }
+    ul.clean li{ margin:4px 0; }
+
+    img {
+      width: 100%;
+      border-radius: 10px;
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      background: white;
+    }
+
+    .caption{
+      margin-top:6px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    /* Leyenda Leaflet */
+    .legend {
+      background: white;
+      padding: 10px 12px;
+      border: 1px solid #bbb;
+      border-radius: 10px;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+    .row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+    .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid #666; }
+
+    /* Sección “Informe” para imprimir: visible en pantalla también */
+    .report{
+      display:none;
+    }
+
+    /* ======== PRINT MODE (A4) ======== */
+    @media print {
+      header { position: static; border-bottom: 0; }
+      body { background: #fff; }
+
+      /* Cambiamos a 1 columna para imprimir */
+      .layout {
+        display:block;
+        height:auto;
+      }
+
+      /* Ocultamos el mapa interactivo (no imprime bien y depende de tiles) */
+      #map { display:none !important; }
+
+      /* Quitamos scroll y fondos */
+      aside {
+        overflow: visible;
+        background: #fff;
+        border-left: 0;
+        padding: 0;
+      }
+
+      .card{
+        border: 1px solid #ccc;
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin: 0 0 12px 0;
+      }
+
+      .toolbar{ display:none !important; }
+
+      /* Mostramos una versión “informe” */
+      .report{ display:block; }
+
+      /* Forzamos saltos bonitos */
+      .page-break{
+        break-before: page;
+        page-break-before: always;
+      }
+
+      /* Ajustes de impresión */
+      img { max-height: 260mm; object-fit: contain; }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>Magreb — Democracia y Desarrollo (1990–2022)</h1>
+  <p>Dashboard (corte 2022 en mapa): capitales, democracia (V-Dem Polyarchy) y PIB per cápita (PPP constantes 2021)</p>
+
+  <div class="toolbar">
+    <button class="btn" onclick="window.print()">🖨️ Imprimir / Guardar en PDF</button>
+    <button class="btn" onclick="alert('Consejo: para imprimir mejor, usa el botón 🖨️. El mapa interactivo se oculta en impresión y quedan los gráficos y el contexto.');">ℹ️ Ayuda impresión</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- MAPA (pantalla) -->
+  <div id="map"></div>
+
+  <!-- LATERAL -->
+  <aside>
+
+    <!-- CONTEXTO (pantalla) -->
+    <div class="card">
+      <h2>Contexto del análisis</h2>
+      <div class="small">
+        Este dashboard presenta un análisis comparativo de <b>trayectorias democráticas</b> y <b>desarrollo económico</b>
+        en países del Magreb y entorno (1990–2022).
+        El objetivo es observar si los cambios democráticos se asocian a mejoras económicas, y cómo eventos políticos
+        (p. ej., <b>Primavera Árabe</b>) afectan las series.
+        <ul class="clean">
+          <li><b>Pregunta de investigación:</b> ¿Cómo ha evolucionado el nivel de democracia y desarrollo económico entre 1990 y 2022?</li>
+          <li><b>Países:</b> Morocco, Algeria, Tunisia, Libya, Egypt, Mauritania</li>
+          <li><b>Indicadores:</b> <code>vdem_polyarchy</code> (0–1) y <code>wdi_gdpcappppcon2021</code></li>
+          <li><b>Dataset:</b> QoG Standard (Time Series), integrando V-Dem + WDI</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Cómo leer el mapa</h2>
+      <div class="small">
+        • Cada punto representa una capital<br>
+        • El color indica el nivel de la variable (según capa)<br>
+        • Usa el selector de capas (arriba derecha) para cambiar entre Democracia y PIB<br>
+        • Haz clic para ver valores exactos
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Interpretación rápida (corte 2022)</h2>
+      <div class="small">
+        El mapa funciona como una “foto final” del periodo: ayuda a comparar países en el último año analizado (2022).
+        Es complementario a las series temporales, que muestran la evolución completa.
+      </div>
+    </div>
+
+    <!-- INFORME (solo impresión) -->
+    <div class="card report">
+      <h2>Resumen para impresión</h2>
+      <div class="small">
+        <b>Diseño:</b> ETL y filtrado del dataset en un pipeline reproducible. Visualización con scripts en Python (Pandas + Matplotlib) y mapa web (Leaflet).<br>
+        <b>Nota metodológica:</b> El análisis se limita a 1990–2022 porque es el último tramo con cobertura consistente en los indicadores empleados.
+      </div>
+    </div>
+
+    <!-- GRÁFICOS -->
+    <div class="card page-break">
+      <h2>Gráfico 1 — Democracia (1990–2022)</h2>
+      <img src="../../capturas/grafico_democracia.png" alt="Democracia">
+      <div class="caption">
+        Interpretación: compara trayectorias democráticas por país; permite detectar cambios no lineales y puntos de inflexión (p. ej., entorno 2011).
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Gráfico 2 — PIB per cápita (1990–2022)</h2>
+      <img src="../../capturas/grafico_pib.png" alt="PIB per cápita">
+      <div class="caption">
+        Interpretación: evolución económica heterogénea; ayuda a contrastar estabilidad macroeconómica vs cambios políticos.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Gráfico 3 — Democracia vs PIB (scatter)</h2>
+      <img src="../../capturas/scatter_democracia_pib.png" alt="Scatter democracia vs PIB">
+      <div class="caption">
+        Interpretación: permite evaluar visualmente si existe relación directa entre desarrollo económico y nivel de democracia.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Gráfico 4 — Impacto de 2011 (pre vs post)</h2>
+      <img src="../../capturas/democracia_pre_post_2011.png" alt="Pre/Post 2011">
+      <div class="caption">
+        Interpretación: compara la media de democracia antes y después de 2011; útil para evidenciar cambios asociados a shocks políticos regionales.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Gráfico 5 — Volatilidad democrática</h2>
+      <img src="../../capturas/volatilidad_democracia.png" alt="Volatilidad democracia">
+      <div class="caption">
+        Interpretación: mide inestabilidad institucional (variación del índice) y diferencia países estables vs altamente volátiles.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Conclusión breve</h2>
+      <div class="small">
+        En conjunto, los resultados sugieren que la democratización en la región no sigue un patrón homogéneo ni está determinada únicamente
+        por el desempeño económico. Eventos políticos e institucionales explican gran parte de la divergencia observada.
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<script>
+  // ======================
+  // CONFIG
+  // ======================
+  const YEAR = 2022;
+  const data = window.CITIES_2022;
+
+  if (!Array.isArray(data)) {
+    alert("ERROR: window.CITIES_2022 no existe. Revisa assets/cities_2022.js");
+  }
+
+  // ======================
+  // COLOR / CLASES
+  // ======================
+  function colorVdem(v) {
+    if (v === null || v === undefined) return "#cccccc";
+    if (v < 0.30) return "#d7191c";
+    if (v < 0.55) return "#fdae61";
+    return "#1a9641";
+  }
+
+  function colorGdp(v) {
+    if (v === null || v === undefined) return "#cccccc";
+    if (v < 8000) return "#d7191c";
+    if (v < 20000) return "#fdae61";
+    return "#1a9641";
+  }
+
+  // ======================
+  // MAPA BASE
+  // ======================
+  const map = L.map("map").setView([30, 10], 4);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap",
+    maxZoom: 19
+  }).addTo(map);
+
+  // ======================
+  // CAPAS
+  // ======================
+  const layerVdemPoints = L.layerGroup();
+  const layerGdpPoints = L.layerGroup();
+
+  const heatVdem = [];
+  const heatGdp = [];
+
+  data.forEach(d => {
+    const popup = `
+      <b>${d.city}</b> — ${d.country}<br>
+      Año: ${d.year}<br>
+      Democracia (V-Dem): ${d.vdem_polyarchy ?? "NA"}<br>
+      PIB pc (PPP 2021): ${d.gdp_pc ?? "NA"}
+    `;
+
+    const c1 = colorVdem(d.vdem_polyarchy);
+    L.circleMarker([d.lat, d.lon], {
+      radius: 7, color: c1, fillColor: c1, fillOpacity: 0.85, weight: 2
+    }).bindPopup(popup).addTo(layerVdemPoints);
+
+    const c2 = colorGdp(d.gdp_pc);
+    L.circleMarker([d.lat, d.lon], {
+      radius: 7, color: c2, fillColor: c2, fillOpacity: 0.85, weight: 2
+    }).bindPopup(popup).addTo(layerGdpPoints);
+
+    if (d.vdem_polyarchy !== null && d.vdem_polyarchy !== undefined) heatVdem.push([d.lat, d.lon, d.vdem_polyarchy]);
+    else heatVdem.push([d.lat, d.lon, 0.1]);
+
+    if (d.gdp_pc !== null && d.gdp_pc !== undefined) {
+      const norm = Math.log(d.gdp_pc) / Math.log(100000);
+      heatGdp.push([d.lat, d.lon, norm]);
+    } else {
+      heatGdp.push([d.lat, d.lon, 0.1]);
+    }
+  });
+
+  const layerVdemHeat = L.heatLayer(heatVdem, { radius: 25, blur: 18, minOpacity: 0.25 });
+  const layerGdpHeat  = L.heatLayer(heatGdp,  { radius: 25, blur: 18, minOpacity: 0.25 });
+
+  layerVdemPoints.addTo(map);
+
+  // ======================
+  // LEYENDA DINÁMICA
+  // ======================
+  const legend = L.control({ position: "bottomright" });
+  legend.onAdd = function () {
+    const div = L.DomUtil.create("div", "legend");
+    div.innerHTML = `<b>Leyenda</b><div id="legendBody"></div>`;
+    return div;
+  };
+  legend.addTo(map);
+
+  function setLegend(mode) {
+    const el = document.getElementById("legendBody");
+    if (!el) return;
+
+    if (mode === "vdem") {
+      el.innerHTML = `
+        <div class="row"><span class="swatch" style="background:#d7191c"></span> V-Dem bajo (&lt; 0.30)</div>
+        <div class="row"><span class="swatch" style="background:#fdae61"></span> V-Dem medio (0.30–0.55)</div>
+        <div class="row"><span class="swatch" style="background:#1a9641"></span> V-Dem alto (≥ 0.55)</div>
+        <div class="row"><span class="swatch" style="background:#cccccc"></span> Sin dato</div>
+      `;
+    } else {
+      el.innerHTML = `
+        <div class="row"><span class="swatch" style="background:#d7191c"></span> PIB bajo (&lt; 8k)</div>
+        <div class="row"><span class="swatch" style="background:#fdae61"></span> PIB medio (8k–20k)</div>
+        <div class="row"><span class="swatch" style="background:#1a9641"></span> PIB alto (≥ 20k)</div>
+        <div class="row"><span class="swatch" style="background:#cccccc"></span> Sin dato</div>
+      `;
+    }
+  }
+  setLegend("vdem");
+
+  const overlays = {
+    "Democracia — Puntos": layerVdemPoints,
+    "Democracia — Heatmap": layerVdemHeat,
+    "PIB per cápita — Puntos": layerGdpPoints,
+    "PIB per cápita — Heatmap": layerGdpHeat
+  };
+
+  L.control.layers(null, overlays, { collapsed: false }).addTo(map);
+
+  map.on("overlayadd", (e) => {
+    if (e.layer === layerVdemPoints || e.layer === layerVdemHeat) setLegend("vdem");
+    if (e.layer === layerGdpPoints  || e.layer === layerGdpHeat)  setLegend("gdp");
+  });
+</script>
+
+</body>
+</html>
