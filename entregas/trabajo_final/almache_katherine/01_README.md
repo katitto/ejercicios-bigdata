@@ -1,7 +1,8 @@
-# Trabajo Final: [Tu Pregunta de Investigacion]
+# Trabajo Final: ¿Cómo ha evolucionado el nivel de democracia y desarrollo económico en los países del Magreb entre 1990 y 2022?
+   
 
 **Alumno:** Katherine Almache
-**Fecha:** 08/02/2026   
+**Fecha:** 10/02/2026   
 
 ---
 
